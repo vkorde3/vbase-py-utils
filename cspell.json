@@ -1,0 +1,31 @@
+{
+    "version": "0.2",
+    "ignorePaths": [],
+    "dictionaryDefinitions": [],
+    "dictionaries": [],
+    "words": [
+        "backtest",
+        "benchs",
+        "boto",
+        "CAGR",
+        "cumprod",
+        "drawdowns",
+        "dropna",
+        "iloc",
+        "ipython",
+        "linecolor",
+        "naturaldelta",
+        "plotly",
+        "pylint",
+        "quantstats",
+        "scikit",
+        "Sortino",
+        "xanchor",
+        "xaxis",
+        "yanchor",
+        "yaxis",
+        "yref"
+    ],
+    "ignoreWords": [],
+    "import": []
+}

@@ -1,0 +1,13 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+- Make minimal changes required to satisfy the objective. Make the changes strictly isolated.
+- When changing settings or configuration, make sure you do not change any other settings and configurations.
+- Do no modify unrelated code.
+- Use DRY (do not repeat yourself principles).
+- Use black formatter for Python.
+- User Python typehints and ensure Python type safety.
+- Conform to PEP8 standards.
+- Use python3.11.

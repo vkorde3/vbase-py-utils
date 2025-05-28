@@ -1,0 +1,3 @@
+[tool.isort]
+# Avoid conflicts with black formatter.
+profile = "black"
