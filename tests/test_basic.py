@@ -10,7 +10,7 @@ class TestBasic(unittest.TestCase):
 
     def test_always_passes(self):
         """A test that always passes."""
-        self.assertTrue(True)
+        self.assertEqual(1 + 1, 2)
 
 
 if __name__ == "__main__":
