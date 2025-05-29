@@ -1,3 +1,3 @@
 """
-Tests for vbase-py-utils.
+Tests for validityBase Python Utilities
 """
