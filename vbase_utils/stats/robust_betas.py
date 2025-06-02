@@ -7,8 +7,8 @@ import pandas as pd
 import statsmodels.api as sm
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
 
 
 def exponential_weights(
@@ -48,7 +48,7 @@ def exponential_weights(
 
 
 # The function must take a large number of arguments
-# and conseuqntly has a large number of local variables.
+# and consequently has a large number of local variables.
 # pylint: disable=too-many-arguments, too-many-locals
 def robust_betas(
     df_asset_rets: pd.DataFrame,
@@ -152,7 +152,7 @@ def robust_betas(
         )
 
     # Check for near-zero variance in df_fact_rets
-    if df_x_clean.var().min() < 1e-10:
+    if df_x_clean.var().min() < NEAR_ZERO_VARIANCE_THRESHOLD:
         logger.error("One or more factors in df_fact_rets have near-zero variance.")
         raise ValueError("One or more factors in df_fact_rets have near-zero variance.")
 
