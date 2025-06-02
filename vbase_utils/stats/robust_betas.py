@@ -11,6 +11,10 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 
+# Threshold for near-zero variance in df_fact_rets.
+NEAR_ZERO_VARIANCE_THRESHOLD = 1e-10
+
+
 def exponential_weights(
     n: int,
     half_life: float | None = None,
