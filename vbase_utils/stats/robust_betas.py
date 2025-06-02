@@ -151,7 +151,7 @@ def robust_betas(
         )
 
     # Check for near-zero variance in df_fact_rets
-    if df_x_clean.var().min() < 1e-10:
+    if df_x_clean.var().min() < NEAR_ZERO_VARIANCE_THRESHOLD:
         logger.error("One or more factors in df_fact_rets have near-zero variance.")
         raise ValueError("One or more factors in df_fact_rets have near-zero variance.")
 
