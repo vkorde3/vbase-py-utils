@@ -1,10 +1,10 @@
 """Robust timeseries regression module"""
 
+import logging
+
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
-import logging
-
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -36,7 +36,7 @@ def exponential_weights(
         raise ValueError("Either half_life or lambda_ must be provided.")
     if half_life is not None and half_life <= 0:
         raise ValueError("half_life must be positive.")
-    if lambda_ is not None and not (0 < lambda_ < 1):
+    if lambda_ is not None and not 0 < lambda_ < 1:
         raise ValueError("lambda_ must be between 0 and 1.")
 
     if lambda_ is None:
@@ -46,10 +46,12 @@ def exponential_weights(
     return weights / np.sum(weights)  # normalize
 
 
+# The function must take a large number of arguments
+# and conseuqntly has a large number of local variables.
+# pylint: disable=too-many-arguments, too-many-locals
 def robust_betas(
-    Y: pd.DataFrame,
-    X: pd.DataFrame,
-    *,
+    df_asset_rets: pd.DataFrame,
+    df_fact_rets: pd.DataFrame,
     half_life: float | None = None,
     lambda_: float | None = None,
     min_timestamps: int = 10,
@@ -57,8 +59,8 @@ def robust_betas(
     """Perform robust regression (RLM) with exponential time-weighting.
 
     Args:
-        Y: DataFrame of dependent returns with shape (n_timestamps, n_assets).
-        X: DataFrame of factor returns with shape (n_timestamps, n_factors).
+        df_asset_rets: DataFrame of dependent returns with shape (n_timestamps, n_assets).
+        df_fact_rets: DataFrame of factor returns with shape (n_timestamps, n_factors).
         half_life: Half-life in time units (e.g., days). Must be positive.
             Recommendations for half-life based on the horizon:
             | Horizon (days) | Recommended half-life (days) |
@@ -76,65 +78,82 @@ def robust_betas(
 
     Raises:
         ValueError: If inputs are empty, have insufficient data, mismatched rows,
-            excessive NaNs, or near-zero variance in X.
+            excessive NaNs, or near-zero variance in df_fact_rets.
     """
     # Check for empty inputs
-    if Y.empty or X.empty:
-        logger.error("Input DataFrame Y or X is empty.")
-        raise ValueError("Input DataFrame Y or X is empty.")
+    if df_asset_rets.empty:
+        logger.error("Input DataFrame df_asset_rets is empty.")
+        raise ValueError("Input DataFrame df_asset_rets is empty.")
+    if df_fact_rets.empty:
+        logger.error("Input DataFrame df_fact_rets is empty.")
+        raise ValueError("Input DataFrame df_fact_rets is empty.")
 
     # Check for mismatched row counts
-    if Y.shape[0] != X.shape[0]:
+    if df_asset_rets.shape[0] != df_fact_rets.shape[0]:
         logger.error(
-            f"Mismatched row counts: Y has {Y.shape[0]} rows, X has {X.shape[0]} rows."
+            "Mismatched row counts: df_asset_rets has %d rows, df_fact_rets has %d rows.",
+            df_asset_rets.shape[0],
+            df_fact_rets.shape[0],
         )
         raise ValueError(
-            f"Mismatched row counts: Y has {Y.shape[0]} rows, X has {X.shape[0]} rows."
+            "Mismatched row counts: "
+            f"df_asset_rets has {df_asset_rets.shape[0]} rows, "
+            f"df_fact_rets has {df_fact_rets.shape[0]} rows."
         )
 
-    # Align Y and X indices and handle NaNs
-    combined: pd.DataFrame = pd.concat([Y, X], axis=1, join="inner")
-    if combined.empty:
-        logger.error("No overlapping timestamps between Y and X.")
-        raise ValueError("No overlapping timestamps between Y and X.")
+    # Align df_asset_rets and df_fact_rets indices and handle NaNs
+    df_combined: pd.DataFrame = pd.concat(
+        [df_asset_rets, df_fact_rets], axis=1, join="inner"
+    )
+    if df_combined.empty:
+        logger.error(
+            "No overlapping timestamps between df_asset_rets and df_fact_rets."
+        )
+        raise ValueError(
+            "No overlapping timestamps between df_asset_rets and df_fact_rets."
+        )
 
-    Y_clean: pd.DataFrame = combined[Y.columns].dropna()
-    X_clean: pd.DataFrame = combined[X.columns].loc[Y_clean.index]
+    df_y_clean: pd.DataFrame = df_combined[df_asset_rets.columns].dropna()
+    df_x_clean: pd.DataFrame = df_combined[df_fact_rets.columns].loc[df_y_clean.index]
 
-    n_timestamps, n_assets = Y_clean.shape
-    _, n_factors = X_clean.shape
+    n_timestamps, _ = df_y_clean.shape
 
     # Log data cleaning results
-    if len(Y) != n_timestamps:
-        dropped_rows = len(Y) - n_timestamps
+    if len(df_asset_rets) != n_timestamps:
+        dropped_rows = len(df_asset_rets) - n_timestamps
         logger.warning(
-            f"Dropped {dropped_rows} rows due to NaNs or index misalignment. "
-            f"Remaining timestamps: {n_timestamps}"
+            "Dropped %d rows due to NaNs or index misalignment. "
+            "Remaining timestamps: %d",
+            dropped_rows,
+            n_timestamps,
         )
         # Check for excessive NaN dropping
-        if dropped_rows > 0.5 * len(Y):
+        if dropped_rows > 0.5 * len(df_asset_rets):
             logger.error(
-                f"Excessive data loss: {dropped_rows} rows dropped (>50% of {len(Y)})."
+                "Excessive data loss: %d rows dropped of %d.",
+                dropped_rows,
+                len(df_asset_rets),
             )
             raise ValueError(
-                f"Excessive data loss: {dropped_rows} rows dropped (>50% of {len(Y)})."
+                f"Excessive data loss: {dropped_rows} rows dropped of {len(df_asset_rets)}."
             )
 
     # Check minimum timestamps
     if n_timestamps < min_timestamps:
         logger.error(
-            f"Insufficient data: {n_timestamps} timestamps available, "
-            f"minimum required is {min_timestamps}."
+            "Insufficient data: %d timestamps available, minimum required is %d.",
+            n_timestamps,
+            min_timestamps,
         )
         raise ValueError(
             f"Insufficient data: {n_timestamps} timestamps available, "
             f"minimum required is {min_timestamps}."
         )
 
-    # Check for near-zero variance in X
-    if X_clean.var().min() < 1e-10:
-        logger.error("One or more factors in X have near-zero variance.")
-        raise ValueError("One or more factors in X have near-zero variance.")
+    # Check for near-zero variance in df_fact_rets
+    if df_x_clean.var().min() < 1e-10:
+        logger.error("One or more factors in df_fact_rets have near-zero variance.")
+        raise ValueError("One or more factors in df_fact_rets have near-zero variance.")
 
     # Calculate weights
     weights: np.ndarray = exponential_weights(
@@ -143,16 +162,16 @@ def robust_betas(
     sqrt_weights: np.ndarray = np.sqrt(weights)
 
     beta_matrix: pd.DataFrame = pd.DataFrame(
-        index=["Intercept"] + list(X_clean.columns), columns=Y_clean.columns
+        index=["Intercept"] + list(df_x_clean.columns), columns=df_y_clean.columns
     )
 
-    for asset in Y_clean.columns:
-        y: np.ndarray = Y_clean[asset].values
-        X_weighted: pd.DataFrame = X_clean.multiply(sqrt_weights, axis=0)
+    for asset in df_y_clean.columns:
+        y: np.ndarray = df_y_clean[asset].values
+        x_weighted: pd.DataFrame = df_x_clean.multiply(sqrt_weights, axis=0)
         y_weighted: np.ndarray = y * sqrt_weights
 
-        Xw_const: pd.DataFrame = sm.add_constant(X_weighted)
-        rlm_model = sm.RLM(y_weighted, Xw_const, M=sm.robust.norms.HuberT())
+        x_w_const: pd.DataFrame = sm.add_constant(x_weighted)
+        rlm_model = sm.RLM(y_weighted, x_w_const, M=sm.robust.norms.HuberT())
         rlm_results = rlm_model.fit()
 
         beta_matrix[asset] = rlm_results.params
