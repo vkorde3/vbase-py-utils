@@ -19,6 +19,7 @@ def exponential_weights(
     """Generate exponential decay weights for n time periods.
 
     Either half_life or lambda_ must be provided.
+    If both are provided, lambda_ is used.
 
     Args:
         n: Number of time periods.
@@ -165,9 +166,9 @@ def robust_betas(
         index=["Intercept"] + list(df_x_clean.columns), columns=df_y_clean.columns
     )
 
+    x_weighted: pd.DataFrame = df_x_clean.multiply(sqrt_weights, axis=0)
     for asset in df_y_clean.columns:
         y: np.ndarray = df_y_clean[asset].values
-        x_weighted: pd.DataFrame = df_x_clean.multiply(sqrt_weights, axis=0)
         y_weighted: np.ndarray = y * sqrt_weights
 
         x_w_const: pd.DataFrame = sm.add_constant(x_weighted)
