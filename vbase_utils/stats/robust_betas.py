@@ -47,7 +47,7 @@ def exponential_weights(
 
 
 # The function must take a large number of arguments
-# and conseuqntly has a large number of local variables.
+# and consequently has a large number of local variables.
 # pylint: disable=too-many-arguments, too-many-locals
 def robust_betas(
     df_asset_rets: pd.DataFrame,
