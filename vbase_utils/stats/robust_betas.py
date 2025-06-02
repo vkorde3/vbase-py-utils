@@ -7,8 +7,8 @@ import pandas as pd
 import statsmodels.api as sm
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
 
 
 def exponential_weights(
