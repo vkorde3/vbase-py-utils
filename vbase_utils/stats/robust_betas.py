@@ -166,10 +166,12 @@ def robust_betas(
     )
     sqrt_weights: np.ndarray = np.sqrt(weights)
 
-    beta_matrix: pd.DataFrame = pd.DataFrame(
-        index=["Intercept"] + list(df_x_clean.columns), columns=df_y_clean.columns
+    df_betas: pd.DataFrame = pd.DataFrame(
+        index=list(df_x_clean.columns), columns=df_y_clean.columns
     )
 
+    # Implement weighted regression for each asset
+    # by multiplying the x and y matrices by the square root of the weights.
     x_weighted: pd.DataFrame = df_x_clean.multiply(sqrt_weights, axis=0)
     for asset in df_y_clean.columns:
         y: np.ndarray = df_y_clean[asset].values
@@ -179,6 +181,6 @@ def robust_betas(
         rlm_model = sm.RLM(y_weighted, x_w_const, M=sm.robust.norms.HuberT())
         rlm_results = rlm_model.fit()
 
-        beta_matrix[asset] = rlm_results.params
+        df_betas[asset] = rlm_results.params
 
-    return beta_matrix
+    return df_betas
