@@ -1,7 +1,7 @@
 """Unit tests for the sim module."""
 
 import unittest
-from typing import Dict, Union
+from typing import Dict
 
 import numpy as np
 import pandas as pd
@@ -24,9 +24,7 @@ class TestSim(unittest.TestCase):
     def test_basic_functionality(self):
         """Test basic functionality of the sim function."""
 
-        def callback(
-            data: Dict[str, Union[pd.DataFrame, pd.Series]]
-        ) -> Dict[str, pd.Series]:
+        def callback(data: Dict[str, pd.DataFrame | pd.Series]) -> Dict[str, pd.Series]:
             df1 = data["df1"]
             df2 = data["df2"]
             series = data["series"]
@@ -64,9 +62,7 @@ class TestSim(unittest.TestCase):
         time_index = pd.date_range("2023-01-01", periods=3)
 
         # pylint: disable=unused-argument
-        def callback(
-            data: Dict[str, Union[pd.DataFrame, pd.Series]]
-        ) -> Dict[str, pd.Series]:
+        def callback(data: Dict[str, pd.DataFrame | pd.Series]) -> Dict[str, pd.Series]:
             return {"values": pd.Series([1, 2, 3])}
 
         with self.assertRaisesRegex(ValueError, "must have a DatetimeIndex"):
@@ -76,7 +72,7 @@ class TestSim(unittest.TestCase):
         """Test that callback returning non-dict raises ValueError."""
 
         # pylint: disable=unused-argument
-        def callback(data: Dict[str, Union[pd.DataFrame, pd.Series]]) -> pd.Series:
+        def callback(data: Dict[str, pd.DataFrame | pd.Series]) -> pd.Series:
             return pd.Series([1, 2, 3])
 
         with self.assertRaisesRegex(
@@ -89,21 +85,19 @@ class TestSim(unittest.TestCase):
 
         # pylint: disable=unused-argument
         def callback(
-            data: Dict[str, Union[pd.DataFrame, pd.Series]]
-        ) -> Dict[str, pd.DataFrame]:
-            return {"values": pd.DataFrame({"A": [1, 2, 3]})}
+            data: Dict[str, pd.DataFrame | pd.Series]
+        ) -> Dict[str, pd.DataFrame | pd.Series]:
+            return {"values": {"A": [1, 2, 3]}}  # type: ignore
 
         with self.assertRaisesRegex(
-            ValueError, "must return a dictionary of pandas Series"
+            ValueError, "must return a dictionary of pandas Series or DataFrames"
         ):
             sim({"df1": self.df1}, callback, self.time_index)
 
     def test_callback_exception(self):
         """Test that callback exceptions are properly handled."""
 
-        def callback(
-            data: Dict[str, Union[pd.DataFrame, pd.Series]]
-        ) -> Dict[str, pd.Series]:
+        def callback(data: Dict[str, pd.DataFrame | pd.Series]) -> Dict[str, pd.Series]:
             raise ValueError("Test error")
 
         with self.assertRaisesRegex(ValueError, "Error processing timestamp"):
@@ -113,9 +107,7 @@ class TestSim(unittest.TestCase):
         """Test with empty data dictionary."""
 
         # pylint: disable=unused-argument
-        def callback(
-            data: Dict[str, Union[pd.DataFrame, pd.Series]]
-        ) -> Dict[str, pd.Series]:
+        def callback(data: Dict[str, pd.DataFrame | pd.Series]) -> Dict[str, pd.Series]:
             return {"values": pd.Series([1, 2, 3])}
 
         result = sim({}, callback, self.time_index)
@@ -127,9 +119,7 @@ class TestSim(unittest.TestCase):
     def test_data_masking(self):
         """Test that data is properly masked at each timestamp."""
 
-        def callback(
-            data: Dict[str, Union[pd.DataFrame, pd.Series]]
-        ) -> Dict[str, pd.Series]:
+        def callback(data: Dict[str, pd.DataFrame | pd.Series]) -> Dict[str, pd.Series]:
             df1 = data["df1"]
             # Return the length of available data at each timestamp
             return {"data_length": pd.Series([len(df1)], index=["length"])}
@@ -146,9 +136,7 @@ class TestSim(unittest.TestCase):
         df1 = pd.DataFrame({"A": [1, np.nan, 3, 4, 5]}, index=self.dates)
         df2 = pd.DataFrame({"B": [10, 20, np.nan, 40, 50]}, index=self.dates)
 
-        def callback(
-            data: Dict[str, Union[pd.DataFrame, pd.Series]]
-        ) -> Dict[str, pd.Series]:
+        def callback(data: Dict[str, pd.DataFrame | pd.Series]) -> Dict[str, pd.Series]:
             df1 = data["df1"]
             df2 = data["df2"]
             return {"result": pd.Series(df1["A"] + df2["B"], index=["sum"])}

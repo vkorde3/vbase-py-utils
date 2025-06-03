@@ -1,7 +1,7 @@
 """Time-based simulation module for processing time series data."""
 
 import logging
-from typing import Callable, Dict, List, Union
+from typing import Callable, Dict, List
 
 import pandas as pd
 
@@ -11,12 +11,13 @@ logger.addHandler(logging.NullHandler())
 
 
 def sim(
-    data: Dict[str, Union[pd.DataFrame, pd.Series]],
+    data: Dict[str, pd.DataFrame | pd.Series],
     callback: Callable[
-        [Dict[str, Union[pd.DataFrame, pd.Series]]], Dict[str, pd.Series]
+        [Dict[str, pd.DataFrame | pd.Series]],
+        Dict[str, pd.DataFrame | pd.Series],
     ],
     time_index: pd.DatetimeIndex,
-) -> Dict[str, pd.DataFrame]:
+) -> Dict[str, pd.DataFrame | pd.Series]:
     """Simulate processing of time series data using a callback function.
 
     This function simulates processing of time series data by:
@@ -35,8 +36,9 @@ def sim(
             The function will process data up to each timestamp in this index.
 
     Returns:
-        Dictionary mapping labels to DataFrames containing the results of the callback function
-        for each timestamp. Each DataFrame's index will match the provided time_index.
+        Dictionary mapping labels to DataFrames and/or Series
+        containing the results of the callback function for each timestamp.
+        Each index will match the provided time_index.
 
     Raises:
         ValueError: If any input data object doesn't have a DatetimeIndex.
@@ -68,13 +70,16 @@ def sim(
             # Validate callback result
             if not isinstance(result_dict, dict):
                 raise ValueError(
-                    f"Callback must return a dictionary of pandas Series, got {type(result_dict)}"
+                    "Callback must return a dictionary of pandas Series or DataFrames, "
+                    f"got {type(result_dict)}"
                 )
 
             for label, result in result_dict.items():
-                if not isinstance(result, pd.Series):
+                if not isinstance(result, pd.Series) and not isinstance(
+                    result, pd.DataFrame
+                ):
                     raise ValueError(
-                        f"Callback must return a dictionary of pandas Series, "
+                        f"Callback must return a dictionary of pandas Series or DataFrames, "
                         f"got {type(result)} for key '{label}'"
                     )
 
@@ -82,8 +87,12 @@ def sim(
                 if label not in results:
                     results[label] = []
 
-                # Turn this Series into a DataFrame with the timestamp time index
-                df_result = pd.DataFrame([result], index=[timestamp])
+                if isinstance(result, pd.Series):
+                    # Turn a Series into a DataFrame with the timestamp time index
+                    df_result = pd.DataFrame([result], index=[timestamp])
+                else:
+                    # If we have a DataFrame, add the timstamp index.
+                    df_result = pd.concat([result], keys=[timestamp], names=["t", None])
                 results[label].append(df_result)
 
         except Exception as e:
