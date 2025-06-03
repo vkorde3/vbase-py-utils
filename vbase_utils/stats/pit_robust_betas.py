@@ -1,19 +1,21 @@
 """Point-in-time robust regression module for calculating hedge ratios and residuals."""
 
 import logging
-from typing import Dict, Optional, Union, cast
+from typing import Dict, Optional, cast
 
 import pandas as pd
 
 from vbase_utils.sim import sim
 from vbase_utils.stats.robust_betas import robust_betas
 
-
 # Configure logging
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 
+# The function must take a large number of arguments
+# and consequently has a large number of local variables.
+# pylint: disable=too-many-arguments, too-many-locals
 def pit_robust_betas(
     df_asset_rets: pd.DataFrame,
     df_fact_rets: pd.DataFrame,
