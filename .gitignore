@@ -1,12 +1,19 @@
-# Config
-.env*
-
 # Py ignored files
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 venv/
+
+# Build folder
+*.egg-info/
+
+# Package build
+build/
+dist/
+
+# Config
+.env*
 
 # Dagster
 .tmp_dagster_*/
