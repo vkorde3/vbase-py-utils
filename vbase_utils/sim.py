@@ -59,15 +59,31 @@ def sim(
     # Process each timestamp
     for timestamp in time_index:
         try:
-            # Mask data for current timestamp
+            # Mask data for current timestamp.
             masked_data = {
                 label: obj[obj.index <= timestamp] for label, obj in data.items()
             }
 
-            # Call callback function
+            # Note that this masking above does not remove columns
+            # that are not in the dataset before timestamp.
+            # Drop pd.DataFrame columns that are all None.
+            # This ensures that the callback function only sees the columns
+            # that are available at the current timestamp.
+            masked_data = {
+                label: (
+                    obj.dropna(axis=1, how="all")
+                    # Process pd.DataFrame objects only.
+                    # This operation makes no sense for pd.Series objects.
+                    if isinstance(obj, pd.DataFrame)
+                    else obj
+                )
+                for label, obj in masked_data.items()
+            }
+
+            # Call the callback function.
             result_dict = callback(masked_data)
 
-            # Validate callback result
+            # Validate the callback result.
             if not isinstance(result_dict, dict):
                 raise ValueError(
                     "Callback must return a dictionary of pandas Series or DataFrames, "
