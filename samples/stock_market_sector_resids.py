@@ -7,20 +7,17 @@ and their respective sectors using the pit_robust_betas function.
 import logging
 import os
 import sys
-import time
-from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Tuple
 
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 
 # Add the parent directory to the Python path to allow importing vbase_utils
 # when running this scample interactively.
+# pylint: disable=wrong-import-position
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from vbase_utils.stats.pit_robust_betas import pit_robust_betas
-
 
 # Configure logging
 logging.basicConfig(
@@ -158,3 +155,20 @@ stock_residuals = market_residuals[list(STOCK_SECTOR_MAP.keys())]
 plot_cumulative_residuals(
     stock_residuals, "Cumulative Residual Returns: Individual Stocks vs SPY"
 )
+
+# Plot all the sources of returns for a stock.
+STOCK = "JPM"
+# Build a DataFrame with the stock and its return components.
+df_component_rets = pd.DataFrame(
+    {
+        "Stock Return": df_rets[STOCK],
+        "Market Return Component": -market_results["df_hedge_rets"][STOCK],
+        "Sector Return Component": -sector_results[STOCK]["df_hedge_rets"][STOCK],
+        "Residual Return Component": sector_results[STOCK]["df_asset_resids"][STOCK],
+    }
+)
+# Ensure all series are aligned to the same timestamp index.
+df_component_rets = df_component_rets.dropna()
+plot_cumulative_residuals(df_component_rets, f"Cumulative Return Components: {STOCK}")
+# Print correlation matrix.
+print(df_component_rets.corr())
