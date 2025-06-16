@@ -85,7 +85,7 @@ class TestSim(unittest.TestCase):
 
         # pylint: disable=unused-argument
         def callback(
-            data: Dict[str, pd.DataFrame | pd.Series]
+            data: Dict[str, pd.DataFrame | pd.Series],
         ) -> Dict[str, pd.DataFrame | pd.Series]:
             return {"values": {"A": [1, 2, 3]}}  # type: ignore
 
@@ -111,10 +111,9 @@ class TestSim(unittest.TestCase):
             return {"values": pd.Series([1, 2, 3])}
 
         result = sim({}, callback, self.time_index)
-        self.assertIsInstance(result, dict)
-        self.assertIn("values", result)
-        self.assertIsInstance(result["values"], pd.DataFrame)
-        self.assertEqual(len(result["values"]), len(self.time_index))
+
+        # If all input data is empty, the callback will be skipped.
+        self.assertEqual(result, {})
 
     def test_data_masking(self):
         """Test that data is properly masked at each timestamp."""
