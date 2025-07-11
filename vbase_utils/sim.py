@@ -114,7 +114,7 @@ def sim(
                         f"got {type(result)} for key '{label}'"
                     )
 
-                # Initialize list for this label if it doesn't exist
+                # Initialize dictionary for this label if it doesn't exist
                 if label not in results:
                     results[label] = {}
 
@@ -124,7 +124,9 @@ def sim(
                 else:
                     # If we have a DataFrame, add the timstamp index.
                     df_result = pd.concat([result], keys=[timestamp], names=["t", None])
+                # Convert result DataFrame to dictionary with row index as key.
                 df_dict = df_result.to_dict("index")
+                # Update the dictionary for this label with the DataFrame dictionary.
                 results[label].update(df_dict)
 
         except Exception as e:
