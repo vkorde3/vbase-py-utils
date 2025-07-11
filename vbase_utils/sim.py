@@ -116,7 +116,7 @@ def sim(
 
                 # Initialize list for this label if it doesn't exist
                 if label not in results:
-                    results[label] = []
+                    results[label] = {}
 
                 if isinstance(result, pd.Series):
                     # Turn a Series into a DataFrame with the timestamp time index
@@ -124,7 +124,8 @@ def sim(
                 else:
                     # If we have a DataFrame, add the timstamp index.
                     df_result = pd.concat([result], keys=[timestamp], names=["t", None])
-                results[label].append(df_result)
+                df_dict = df_result.to_dict("index")
+                results[label].update(df_dict)
 
         except Exception as e:
             logger.error(
@@ -136,4 +137,7 @@ def sim(
             raise ValueError(f"Error processing timestamp {timestamp}: {str(e)}") from e
 
     # Combine all results into DataFrames
-    return {label: pd.concat(df_list) for label, df_list in results.items()}
+    return {
+        label: pd.DataFrame.from_dict(df_dict, orient="index")
+        for label, df_dict in results.items()
+    }
