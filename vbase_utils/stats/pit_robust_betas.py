@@ -149,9 +149,9 @@ def pit_robust_betas(
     # Calculate the predicted returns.
     # We must unstack the factor name column to an index level.
     # Transform to MultiIndex format.
-    df_fact_rets_stacked = df_fact_rets.stack().to_frame()
+    df_fact_rets_stacked = df_fact_rets.stack().to_frame("ret")
     df_fact_rets_stacked.index.names = ["timestamp", "factor"]
-    df_fact_rets_stacked.columns = ["ret"]
+    # df_fact_rets_stacked.columns = ["ret"]
     # Multiply the hedge weights by the factor returns for each factor
     # Using multiplication with align.
     df_hedge_rets_by_fact = df_hedge_weights.multiply(
